@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>ماشین حساب مهندسی</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0f1115">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="کلکولاتور">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Chakra+Petch:wght@500;600;700&display=swap');
+
+  :root{
+    --chassis-1:#5a6472;
+    --chassis-2:#3a414c;
+    --chassis-3:#20242b;
+    --groove:#171a1f;
+    --lcd-bg-1:#12220f;
+    --lcd-bg-2:#0a1509;
+    --lcd-text:#8aff6b;
+    --lcd-dim:#3f7a34;
+    --amber:#ffab2e;
+    --amber-dim:#5c3f13;
+    --chrome-hi:#e8ecf1;
+    --chrome-lo:#8b93a0;
+    --danger:#ff5c5c;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 50% 0%, #2b3038 0%, #0c0d10 65%);
+    color:var(--chrome-hi);
+    font-family:'Chakra Petch',"Segoe UI",Tahoma,Vazirmatn,Arial,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:10px;
+  }
+
+  .calc{
+    width:100%;
+    max-width:430px;
+    background:linear-gradient(180deg, var(--chassis-1) 0%, var(--chassis-2) 12%, var(--chassis-3) 100%);
+    border-radius:10px;
+    padding:10px;
+    box-shadow:
+      0 25px 60px rgba(0,0,0,.6),
+      inset 0 1px 0 rgba(255,255,255,.25),
+      inset 0 -2px 3px rgba(0,0,0,.6);
+    border:1px solid #10131a;
+  }
+
+  /* ---- title bar ---- */
+  .titlebar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:linear-gradient(180deg, #6b7684 0%, #40474f 100%);
+    border-radius:5px;
+    padding:6px 8px;
+    margin-bottom:8px;
+    border:1px solid #171a1f;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .titlebar .dots{ display:flex; gap:5px; }
+  .titlebar .dots span{
+    width:9px; height:9px; border-radius:50%;
+    display:inline-block;
+    background:linear-gradient(180deg,#cfd5dc,#8b93a0);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 1px rgba(0,0,0,.4);
+  }
+  .titlebar .brand{
+    font-family:'Chakra Petch',sans-serif;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:#1c1f24;
+    text-shadow:0 1px 0 rgba(255,255,255,.35);
+  }
+  .titlebar .lamp{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--lcd-text);
+    box-shadow:0 0 6px 2px var(--lcd-text);
+  }
+
+  /* ---- mode toggle strip ---- */
+  .mode-toggle{
+    display:flex;
+    gap:5px;
+    margin-bottom:8px;
+    background:var(--groove);
+    padding:5px;
+    border-radius:6px;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.6);
+  }
+  .mode-btn{
+    flex:1;
+    background:linear-gradient(180deg,#3d434c,#25292f);
+    border:1px solid #10131a;
+    color:var(--chrome-lo);
+    font-family:'Chakra Petch',sans-serif;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:1px;
+    padding:6px 4px;
+    border-radius:4px;
+    cursor:pointer;
+    transition:.15s;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .mode-btn.active{
+    background:linear-gradient(180deg,#ffcf7a,var(--amber));
+    color:#2a1a02;
+    border-color:#a56a1a;
+    text-shadow:0 1px 0 rgba(255,255,255,.4);
+  }
+
+  /* ---- LCD screen ---- */
+  .screen{
+    position:relative;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0px, rgba(0,0,0,.18) 1px, transparent 1px, transparent 3px),
+      linear-gradient(160deg, var(--lcd-bg-1), var(--lcd-bg-2));
+    border-radius:5px;
+    padding:14px 12px 10px;
+    margin-bottom:8px;
+    border:2px solid #0a0c0a;
+    min-height:96px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    overflow:hidden;
+    box-shadow:
+      inset 0 2px 8px rgba(0,0,0,.8),
+      inset 0 0 25px rgba(0,0,0,.5);
+  }
+  .screen::before{
+    content:"";
+    position:absolute; inset:0;
+    background:radial-gradient(ellipse at 30% 0%, rgba(138,255,107,.06), transparent 60%);
+    pointer-events:none;
+  }
+  .history{
+    color:var(--lcd-dim);
+    font-family:'Share Tech Mono',monospace;
+    font-size:12px;
+    min-height:16px;
+    direction:ltr;
+    text-align:right;
+    overflow-x:auto;
+    white-space:nowrap;
+    text-shadow:0 0 4px rgba(138,255,107,.3);
+  }
+  .expr{
+    color:var(--lcd-dim);
+    font-family:'Share Tech Mono',monospace;
+    font-size:15px;
+    direction:ltr;
+    text-align:right;
+    min-height:20px;
+    margin-top:3px;
+    overflow-x:auto;
+    white-space:nowrap;
+    text-shadow:0 0 5px rgba(138,255,107,.35);
+  }
+  .result{
+    font-family:'Share Tech Mono',monospace;
+    font-size:34px;
+    font-weight:400;
+    color:var(--lcd-text);
+    direction:ltr;
+    text-align:right;
+    margin-top:2px;
+    overflow-x:auto;
+    white-space:nowrap;
+    letter-spacing:1px;
+    text-shadow:0 0 8px rgba(138,255,107,.65), 0 0 2px rgba(138,255,107,.9);
+  }
+  .err{ color:var(--danger) !important; text-shadow:0 0 8px rgba(255,92,92,.6) !important; font-size:20px; }
+
+  /* ---- secondary function strip ---- */
+  .row-secondary{
+    display:flex; gap:5px; margin-bottom:8px;
+    background:var(--groove);
+    padding:5px;
+    border-radius:6px;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.6);
+  }
+  .row-secondary button{
+    flex:1;
+    font-size:11px;
+    color:var(--chrome-lo);
+    background:linear-gradient(180deg,#3d434c,#25292f);
+    padding:7px 2px;
+  }
+
+  /* ---- keypad grid ---- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:6px;
+    background:var(--groove);
+    padding:6px;
+    border-radius:8px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.7);
+  }
+  button{
+    border:none;
+    outline:none;
+    font-family:'Chakra Petch',inherit;
+    border-radius:6px;
+    padding:12px 0;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    background:linear-gradient(180deg,#4a5058 0%, #2c3038 55%, #23262c 100%);
+    color:var(--chrome-hi);
+    border:1px solid #14161a;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.25),
+      inset 0 -3px 4px rgba(0,0,0,.5),
+      0 2px 2px rgba(0,0,0,.4);
+    transition:.08s transform,.08s box-shadow;
+    user-select:none;
+  }
+  button:active{
+    transform:translateY(2px) scale(.97);
+    box-shadow:
+      inset 0 2px 5px rgba(0,0,0,.7),
+      inset 0 -1px 0 rgba(255,255,255,.1);
+  }
+
+  .fn{ color:#bcd8ff; font-size:12px; }
+  .op{
+    background:linear-gradient(180deg,#5f6a78,#333a42);
+    color:#eef4ff;
+    font-weight:700;
+  }
+  .eq{
+    background:linear-gradient(180deg,#ffcf7a,var(--amber) 60%, #c9821e);
+    color:#2a1a02;
+    font-weight:800;
+    text-shadow:0 1px 0 rgba(255,255,255,.35);
+  }
+  .num{ font-weight:700; font-size:16px; }
+  .top{
+    background:linear-gradient(180deg,#4a3030,#2c1c1c);
+    color:var(--danger);
+    border:1px solid #1a0f0f;
+  }
+  .angle-active{ color:var(--amber); }
+
+  @media (max-width:360px){
+    button{ padding:10px 0; font-size:12px; }
+    .result{ font-size:26px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="calc">
+  <div class="titlebar">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <div class="brand">ENGCALC &nbsp;٩٩٩</div>
+    <div class="lamp"></div>
+  </div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="degBtn" onclick="setAngleMode('deg')">DEG</button>
+    <button class="mode-btn" id="radBtn" onclick="setAngleMode('rad')">RAD</button>
+    <button class="mode-btn" id="invBtn" onclick="toggleInv()">INV</button>
+  </div>
+
+  <div class="screen">
+    <div class="history" id="history">&nbsp;</div>
+    <div class="expr" id="expr">&nbsp;</div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <div class="row-secondary">
+    <button onclick="pushFn('∫')" title="انتگرال معین عددی">∫ dx</button>
+    <button onclick="pushFn('d/dx')" title="مشتق عددی">d/dx</button>
+    <button onclick="pushVal('Math.PI')">π</button>
+    <button onclick="pushVal('Math.E')">e</button>
+    <button onclick="pushFn('nPr')">nPr</button>
+    <button onclick="pushFn('nCr')">nCr</button>
+  </div>
+
+  <div class="grid">
+    <button class="top" onclick="clearAll()">AC</button>
+    <button class="top" onclick="backspace()">⌫</button>
+    <button class="fn" onclick="pushChar('(')">(</button>
+    <button class="fn" onclick="pushChar(')')">)</button>
+    <button class="op" onclick="pushChar('%')">%</button>
+
+    <button class="fn" id="sinBtn" onclick="pushTrig('sin')">sin</button>
+    <button class="fn" id="cosBtn" onclick="pushTrig('cos')">cos</button>
+    <button class="fn" id="tanBtn" onclick="pushTrig('tan')">tan</button>
+    <button class="fn" onclick="pushFn('log')">log</button>
+    <button class="fn" onclick="pushFn('ln')">ln</button>
+
+    <button class="fn" onclick="pushFn('√')">√</button>
+    <button class="fn" onclick="pushFn('∛')">∛</button>
+    <button class="fn" onclick="pushChar('^')">xʸ</button>
+    <button class="fn" onclick="pushFn('x²')">x²</button>
+    <button class="fn" onclick="pushFn('1/x')">1/x</button>
+
+    <button class="num" onclick="pushChar('7')">7</button>
+    <button class="num" onclick="pushChar('8')">8</button>
+    <button class="num" onclick="pushChar('9')">9</button>
+    <button class="op" onclick="pushChar('/')">÷</button>
+    <button class="fn" onclick="pushFn('n!')">n!</button>
+
+    <button class="num" onclick="pushChar('4')">4</button>
+    <button class="num" onclick="pushChar('5')">5</button>
+    <button class="num" onclick="pushChar('6')">6</button>
+    <button class="op" onclick="pushChar('*')">×</button>
+    <button class="fn" onclick="pushChar('EXP')">EXP</button>
+
+    <button class="num" onclick="pushChar('1')">1</button>
+    <button class="num" onclick="pushChar('2')">2</button>
+    <button class="num" onclick="pushChar('3')">3</button>
+    <button class="op" onclick="pushChar('-')">−</button>
+    <button class="fn" onclick="pushChar('Ans')">Ans</button>
+
+    <button class="num" onclick="pushChar('0')">0</button>
+    <button class="num" onclick="pushChar('.')">.</button>
+    <button class="fn" onclick="pushChar('±')">±</button>
+    <button class="op" onclick="pushChar('+')">+</button>
+    <button class="eq" onclick="calculate()">=</button>
+  </div>
+</div>
+
+<script>
+let expr = "";
+let angleMode = "deg"; // deg | rad
+let invMode = false;
+let lastAns = 0;
+
+const exprEl = document.getElementById('expr');
+const resultEl = document.getElementById('result');
+const historyEl = document.getElementById('history');
+
+function render(){
+  exprEl.textContent = expr.length ? expr : '\u00A0';
+}
+
+function setAngleMode(m){
+  angleMode = m;
+  document.getElementById('degBtn').classList.toggle('active', m==='deg');
+  document.getElementById('radBtn').classList.toggle('active', m==='rad');
+}
+
+function toggleInv(){
+  invMode = !invMode;
+  document.getElementById('invBtn').classList.toggle('active', invMode);
+  document.getElementById('sinBtn').textContent = invMode ? 'sin⁻¹' : 'sin';
+  document.getElementById('cosBtn').textContent = invMode ? 'cos⁻¹' : 'cos';
+  document.getElementById('tanBtn').textContent = invMode ? 'tan⁻¹' : 'tan';
+}
+
+function pushChar(c){
+  if(c === 'Ans'){ expr += '(' + lastAns + ')'; }
+  else if(c === '±'){
+    // toggle sign of last number token
+    const m = expr.match(/(-?\d*\.?\d+)$/);
+    if(m){
+      const num = m[1];
+      const start = expr.length - num.length;
+      const negated = num.startsWith('-') ? num.slice(1) : '-' + num;
+      expr = expr.slice(0,start) + negated;
+    }
+  } else if(c === 'EXP'){
+    expr += 'e';
+  } else {
+    expr += c;
+  }
+  render();
+}
+
+function pushVal(v){
+  expr += (v==='Math.PI' ? 'π' : 'e');
+  render();
+}
+
+function pushTrig(fn){
+  const name = invMode ? 'a'+fn : fn;
+  expr += name + '(';
+  render();
+}
+
+function pushFn(fn){
+  switch(fn){
+    case 'log': expr += 'log('; break;
+    case 'ln': expr += 'ln('; break;
+    case '√': expr += '√('; break;
+    case '∛': expr += '∛('; break;
+    case 'x²': expr += '^2'; break;
+    case '1/x': expr = '1/(' + expr + ')'; break;
+    case 'n!': expr += '!'; break;
+    case 'nPr': expr += 'nPr('; break;
+    case 'nCr': expr += 'nCr('; break;
+    case '∫': expr += '∫('; break;
+    case 'd/dx': expr += 'd('; break;
+  }
+  render();
+}
+
+function backspace(){
+  expr = expr.slice(0,-1);
+  render();
+}
+
+function clearAll(){
+  expr = "";
+  resultEl.textContent = "0";
+  resultEl.classList.remove('err');
+  historyEl.textContent = '\u00A0';
+  render();
+}
+
+// ---------- factorial & combinatorics ----------
+function factorial(n){
+  n = Math.round(n);
+  if(n < 0) return NaN;
+  if(n > 170) return Infinity;
+  let r = 1;
+  for(let i=2;i<=n;i++) r*=i;
+  return r;
+}
+function nPr(n,r){ return factorial(n) / factorial(n-r); }
+function nCr(n,r){ return factorial(n) / (factorial(r)*factorial(n-r)); }
+
+// ---------- numeric integration (Simpson's rule) ----------
+// expects string like "expr,a,b" using x as variable
+function integrate(fnStr, a, b, evalFn){
+  const n = 1000; // even
+  const h = (b-a)/n;
+  let sum = evalFn(fnStr, a) + evalFn(fnStr, b);
+  for(let i=1;i<n;i++){
+    const x = a + i*h;
+    sum += evalFn(fnStr, x) * (i % 2 === 0 ? 2 : 4);
+  }
+  return sum * h / 3;
+}
+
+// ---------- numeric derivative (central difference) ----------
+function derivative(fnStr, x, evalFn){
+  const h = 1e-6;
+  return (evalFn(fnStr, x+h) - evalFn(fnStr, x-h)) / (2*h);
+}
+
+// ---------- angle helpers ----------
+function toRad(x){ return angleMode === 'deg' ? x * Math.PI/180 : x; }
+function fromRad(x){ return angleMode === 'deg' ? x * 180/Math.PI : x; }
+
+// ---------- preprocess & evaluate ----------
+function preprocess(str){
+  let s = str;
+
+  // replace constants
+  s = s.replace(/π/g, 'Math.PI');
+  s = s.replace(/(?<![a-zA-Z])e(?![a-zA-Z(])/g, 'Math.E'); // lone 'e' -> Math.E (careful with EXP)
+
+  // scientific notation EXP -> e (leave as JS exponent literal marker handled below)
+  s = s.replace(/e(?=[\d(\-])/g, 'e'); // keep as is; JS supports 1e10 natively already if typed directly
+
+  // percentage: number%
+  s = s.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+
+  // factorial: n!
+  while(/(\d+(\.\d+)?|\))!/.test(s)){
+    s = s.replace(/(\d+(\.\d+)?|\))!/, (match, p1) => {
+      if(p1 === ')'){
+        // find matching paren group before it - fallback simple: wrap whole preceding parens hard, skip complexity
+        return 'FACT_PAREN_MARK';
+      }
+      return `factorial(${p1})`;
+    });
+    if(s.includes('FACT_PAREN_MARK')) break; // avoid infinite loop for complex cases
+  }
+
+  // power ^ -> **
+  s = s.replace(/\^/g, '**');
+
+  // sqrt & cbrt
+  s = s.replace(/√\(/g, 'Math.sqrt(');
+  s = s.replace(/∛\(/g, 'Math.cbrt(');
+
+  // log (base10) & ln
+  s = s.replace(/log\(/g, 'Math.log10(');
+  s = s.replace(/ln\(/g, 'Math.log(');
+
+  // trig with degree/radian conversion
+  s = s.replace(/asin\(/g, '__ASIN(');
+  s = s.replace(/acos\(/g, '__ACOS(');
+  s = s.replace(/atan\(/g, '__ATAN(');
+  s = s.replace(/sin\(/g, '__SIN(');
+  s = s.replace(/cos\(/g, '__COS(');
+  s = s.replace(/tan\(/g, '__TAN(');
+
+  return s;
+}
+
+function safeEval(s){
+  const __SIN = x => Math.sin(toRad(x));
+  const __COS = x => Math.cos(toRad(x));
+  const __TAN = x => Math.tan(toRad(x));
+  const __ASIN = x => fromRad(Math.asin(x));
+  const __ACOS = x => fromRad(Math.acos(x));
+  const __ATAN = x => fromRad(Math.atan(x));
+  // eslint-disable-next-line no-eval
+  return Function('Math','factorial','nPr','nCr','__SIN','__COS','__TAN','__ASIN','__ACOS','__ATAN',
+    `"use strict"; return (${s});`
+  )(Math, factorial, nPr, nCr, __SIN, __COS, __TAN, __ASIN, __ACOS, __ATAN);
+}
+
+function evalExpressionWithX(fnStr, xVal){
+  let s = fnStr.replace(/(?<![a-zA-Z])x(?![a-zA-Z(])/g, `(${xVal})`);
+  s = preprocess(s);
+  return safeEval(s);
+}
+
+function handleIntegralAndDerivative(str){
+  // ∫(expr,a,b)
+  let s = str.replace(/∫\(([^,]+),([^,]+),([^)]+)\)/g, (m, fn, a, b) => {
+    const aVal = safeEval(preprocess(a));
+    const bVal = safeEval(preprocess(b));
+    const val = integrate(fn, aVal, bVal, evalExpressionWithX);
+    return `(${val})`;
+  });
+  // d(expr,x0)
+  s = s.replace(/d\(([^,]+),([^)]+)\)/g, (m, fn, x0) => {
+    const xVal = safeEval(preprocess(x0));
+    const val = derivative(fn, xVal, evalExpressionWithX);
+    return `(${val})`;
+  });
+  return s;
+}
+
+function formatNumber(n){
+  if(!isFinite(n)) return n > 0 ? '∞' : '-∞';
+  if(Number.isNaN(n)) return 'خطا';
+  if(Math.abs(n) < 1e-10) n = 0;
+  const rounded = Math.round(n * 1e10) / 1e10;
+  return rounded.toString();
+}
+
+function calculate(){
+  if(!expr.trim()){ return; }
+  try{
+    let s = expr;
+    s = handleIntegralAndDerivative(s);
+    s = preprocess(s);
+    // auto-close parentheses
+    const open = (s.match(/\(/g)||[]).length;
+    const close = (s.match(/\)/g)||[]).length;
+    for(let i=0;i<open-close;i++) s += ')';
+
+    const val = safeEval(s);
+    const formatted = formatNumber(val);
+
+    historyEl.textContent = expr;
+    resultEl.textContent = formatted;
+    resultEl.classList.remove('err');
+    lastAns = val;
+    expr = formatted;
+    render();
+  }catch(err){
+    resultEl.textContent = 'خطا';
+    resultEl.classList.add('err');
+  }
+}
+
+// keyboard support
+document.addEventListener('keydown', (e)=>{
+  const k = e.key;
+  if(/[0-9.+\-*/()]/.test(k)){ pushChar(k); e.preventDefault(); }
+  else if(k === 'Enter' || k === '='){ calculate(); e.preventDefault(); }
+  else if(k === 'Backspace'){ backspace(); }
+  else if(k === 'Escape'){ clearAll(); }
+  else if(k === '^'){ pushChar('^'); }
+});
+
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+
+</body>
+</html>
